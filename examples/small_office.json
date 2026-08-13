@@ -1,0 +1,35 @@
+{
+  "parent_network": "192.168.10.0/24",
+  "allow_point_to_point_31": false,
+  "segments": [
+    {
+      "name": "Employee Users",
+      "required_hosts": 60,
+      "description": "Corporate user workstations",
+      "vlan_id": 10,
+      "security_zone": "trusted"
+    },
+    {
+      "name": "Application Servers",
+      "required_hosts": 30,
+      "description": "Internal application servers",
+      "vlan_id": 20,
+      "security_zone": "server"
+    },
+    {
+      "name": "Guest WiFi",
+      "required_hosts": 20,
+      "description": "Untrusted guest devices",
+      "vlan_id": 30,
+      "security_zone": "guest"
+    },
+    {
+      "name": "Network Management",
+      "required_hosts": 12,
+      "description": "Administration interfaces",
+      "vlan_id": 99,
+      "security_zone": "management"
+    }
+  ]
+}
+

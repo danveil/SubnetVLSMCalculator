@@ -1,0 +1,42 @@
+{
+  "parent_network": "10.40.0.0/21",
+  "allow_point_to_point_31": false,
+  "segments": [
+    {
+      "name": "University Laboratory",
+      "required_hosts": 200,
+      "description": "Isolated teaching and experiment systems",
+      "vlan_id": 110,
+      "security_zone": "laboratory"
+    },
+    {
+      "name": "Administration",
+      "required_hosts": 100,
+      "description": "Administrative staff systems",
+      "vlan_id": 120,
+      "security_zone": "restricted"
+    },
+    {
+      "name": "Research",
+      "required_hosts": 100,
+      "description": "Research workstations and instruments",
+      "vlan_id": 130,
+      "security_zone": "research"
+    },
+    {
+      "name": "Development",
+      "required_hosts": 60,
+      "description": "Non-production application development",
+      "vlan_id": 140,
+      "security_zone": "development"
+    },
+    {
+      "name": "Production",
+      "required_hosts": 60,
+      "description": "Production workloads separated from development",
+      "vlan_id": 150,
+      "security_zone": "production"
+    }
+  ]
+}
+

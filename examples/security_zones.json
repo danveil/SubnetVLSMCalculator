@@ -1,0 +1,49 @@
+{
+  "parent_network": "172.20.50.0/24",
+  "allow_point_to_point_31": true,
+  "segments": [
+    {
+      "name": "Guest Wireless",
+      "required_hosts": 60,
+      "description": "Internet-only untrusted client access",
+      "vlan_id": 210,
+      "security_zone": "guest"
+    },
+    {
+      "name": "DMZ Services",
+      "required_hosts": 30,
+      "description": "Internet-facing reverse proxies and services",
+      "vlan_id": 220,
+      "security_zone": "dmz"
+    },
+    {
+      "name": "Server Network",
+      "required_hosts": 30,
+      "description": "Internal server workloads",
+      "vlan_id": 230,
+      "security_zone": "server"
+    },
+    {
+      "name": "IoT Isolation",
+      "required_hosts": 30,
+      "description": "Constrained and limited-trust devices",
+      "vlan_id": 240,
+      "security_zone": "iot"
+    },
+    {
+      "name": "Management Network",
+      "required_hosts": 12,
+      "description": "Restricted infrastructure administration",
+      "vlan_id": 250,
+      "security_zone": "management"
+    },
+    {
+      "name": "Firewall Transit",
+      "required_hosts": 2,
+      "description": "Explicit RFC 3021 point-to-point transit",
+      "security_zone": "transit",
+      "point_to_point": true
+    }
+  ]
+}
+

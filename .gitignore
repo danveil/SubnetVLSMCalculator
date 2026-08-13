@@ -1,0 +1,46 @@
+# Bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.ven*.broken-*/
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Builds and packaging
+build/
+dist/
+*.egg-info/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Generated reports and temporary files
+report*.json
+report*.csv
+report*.txt
+packet-tracer*.txt
+*.tmp
+*.temp
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
