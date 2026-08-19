@@ -18,6 +18,13 @@ class ExportError(OSError):
     """Raised when a report cannot be exported safely."""
 
 
+def _spreadsheet_safe(value: Any) -> Any:
+    """Prevent user-controlled strings from becoming spreadsheet formulas."""
+    if isinstance(value, str) and value.startswith(("=", "+", "-", "@", "\t", "\r", "\n")):
+        return f"'{value}"
+    return value
+
+
 def _prepare(path: Path, force: bool) -> Path:
     validated = validate_output_path(path)
     if validated.exists() and not force:
@@ -84,7 +91,7 @@ def export_csv(result: VLSMResult, path: Path, *, force: bool = False) -> Path:
                     for key in fixed_fields
                 }
                 row.update(allocation.model_dump(mode="json"))
-                writer.writerow(row)
+                writer.writerow({key: _spreadsheet_safe(value) for key, value in row.items()})
     except OSError as exc:
         raise ExportError(f"could not write CSV report '{destination}': {exc}") from exc
     return destination

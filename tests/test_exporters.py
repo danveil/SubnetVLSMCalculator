@@ -39,6 +39,30 @@ def test_csv_export_contains_allocation(tmp_path: Path, result) -> None:  # type
     assert rows[0]["version"] == "0.1.0"
 
 
+def test_csv_export_neutralizes_spreadsheet_formulas(tmp_path: Path) -> None:
+    malicious = allocate_vlsm(
+        VLSMInput(
+            parent_network="192.168.50.0/24",
+            segments=(
+                SegmentRequest(
+                    name="=2+2",
+                    required_hosts=20,
+                    description="+cmd",
+                    security_zone="@zone",
+                ),
+            ),
+        )
+    )
+    path = export_csv(malicious, tmp_path / "report.csv")
+
+    with path.open(encoding="utf-8", newline="") as stream:
+        row = next(csv.DictReader(stream))
+
+    assert row["segment"] == "'=2+2"
+    assert row["description"] == "'+cmd"
+    assert row["security_zone"] == "'@zone"
+
+
 def test_text_export(tmp_path: Path, result) -> None:  # type: ignore[no-untyped-def]
     content = export_text(result, tmp_path / "report.txt").read_text(encoding="utf-8")
     assert "Users: 192.168.50.0/26" in content

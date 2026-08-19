@@ -1,24 +1,27 @@
 # Preparation
 
-This document records the environment requirements and setup commands before any
-application files are created. The project does not install system-wide software
-and does not make external network requests at runtime.
+This document records the environment requirements and setup commands for the
+Python CLI and the separate web application. Neither product makes external
+network requests while performing subnet calculations.
 
 ## Required software
 
-- Python 3.12 or newer (CPython is recommended)
+- Python 3.12, 3.13, or 3.14 (CPython is recommended)
 - `pip`, normally bundled with Python
+- Node.js 24
+- pnpm 11.19.0, matching `web/package.json`
 - Git for cloning and version-control workflows
 
 The inspected Windows development machine had Git 2.54.0 available. Neither a
 system `python` command nor a Python Launcher installation was detected, so a
-Python 3.12+ installation or an isolated bundled runtime is required for local
-validation.
+supported Python installation or an isolated bundled runtime is required for
+local validation.
 
 ## Supported Python version
 
-SubnetVLSMCalculator supports Python 3.12 and Python 3.13. The CI test matrix
-checks both versions.
+SubnetVLSMCalculator supports Python 3.12, 3.13, and 3.14. The CI test matrix
+checks all three versions. `pyproject.toml` deliberately excludes untested future
+Python releases until they are added to CI.
 
 ## Required Python packages
 
@@ -37,6 +40,12 @@ Development dependencies:
 
 Python's standard-library `ipaddress` module is the source of truth for address
 and subnet calculations.
+
+## Required web packages
+
+The web workspace installs its exact Next.js, React, TypeScript, Vitest, ESLint,
+Prettier, and Tailwind versions from `web/pnpm-lock.yaml`. Do not install these
+packages globally or substitute npm/yarn for the locked pnpm workflow.
 
 ## Optional software
 
@@ -62,17 +71,28 @@ Install Git if needed:
 winget install --id Git.Git --exact
 ```
 
-## Verify Python, Git, and pip
+Install Node.js 24 if needed, then activate the repository's pnpm version:
+
+```powershell
+winget install --id OpenJS.NodeJS.LTS --exact
+corepack enable
+corepack prepare pnpm@11.19.0 --activate
+```
+
+## Verify Python, Node.js, pnpm, Git, and pip
 
 Open a new PowerShell window after installing Python, then run:
 
 ```powershell
 python --version
 python -m pip --version
+node --version
+pnpm --version
 git --version
 ```
 
-`python --version` must report Python 3.12 or newer.
+`python --version` must report 3.12, 3.13, or 3.14. `node --version` must report
+24.x and `pnpm --version` must report 11.19.0.
 
 ## Environment setup
 
@@ -85,6 +105,18 @@ python -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
+
+Install the web workspace separately:
+
+```powershell
+Set-Location web
+pnpm install --frozen-lockfile
+Copy-Item ..\.env.example .env.local
+pnpm dev
+```
+
+The copied environment file disables Next.js telemetry and supplies only safe
+local defaults. The application is available at `http://localhost:3000`.
 
 If PowerShell blocks local activation scripts for the current process only:
 
@@ -111,6 +143,16 @@ python -m pip install -e ".[dev]"
 pytest
 ruff check .
 mypy src/subnet_calculator
+```
+
+Run the complete web quality gate from `web`:
+
+```powershell
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:coverage
+pnpm build
 ```
 
 Leave the environment with:
@@ -141,3 +183,7 @@ environment. If `.venv\Scripts\python.exe --version` says it cannot create a
 process, the environment references a removed Python installation. Preserve or
 delete that broken `.venv`, recreate it with `python -m venv .venv`, then reinstall
 `.[dev]`; virtual environments are not portable across Python installations.
+
+If pnpm reports a lockfile or peer-dependency error, confirm Node 24 and pnpm
+11.19.0 are active, remove no lockfile entries by hand, and rerun
+`pnpm install --frozen-lockfile` from `web`.

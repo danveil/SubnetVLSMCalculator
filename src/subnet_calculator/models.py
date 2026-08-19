@@ -63,7 +63,7 @@ class IPv6Analysis(ImmutableModel):
 class SegmentRequest(BaseModel):
     """One requested VLSM segment."""
 
-    model_config = ConfigDict(frozen=True, str_strip_whitespace=True)
+    model_config = ConfigDict(frozen=True, str_strip_whitespace=True, extra="forbid")
 
     name: str = Field(min_length=1, max_length=100)
     required_hosts: int = Field(gt=0)
@@ -84,7 +84,7 @@ class SegmentRequest(BaseModel):
 class VLSMInput(BaseModel):
     """Validated VLSM input configuration."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     parent_network: str
     allow_point_to_point_31: bool = False

@@ -1,15 +1,85 @@
 # SubnetVLSMCalculator
 
 [![CI](https://img.shields.io/badge/CI-configured-blue)](#testing)
-[![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.12%E2%80%933.14-3776AB)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Coverage](https://img.shields.io/badge/coverage-90%25%2B-brightgreen)](#testing)
 
-SubnetVLSMCalculator is a professional, offline command-line application for
-IPv4 and IPv6 analysis, mask conversion, and safe Variable Length Subnet Mask
-(VLSM) planning. It uses Python's `ipaddress` module as its calculation source of
-truth and combines typed domain logic with Typer, Rich, Pydantic, and an extensive
-automated test suite.
+This repository now contains two working products. **SubnetForge** is the new
+anonymous-first Next.js network-address-planning workspace, while the original
+**SubnetVLSMCalculator** remains a professional offline Python CLI for IPv4/IPv6,
+mask conversion, reports, and Packet Tracer templates. The migration is
+incremental: proven CLI functionality stays available while the browser product
+gains a separately tested TypeScript engine.
+
+The temporary SubnetForge name is isolated in `web/src/config/brand.ts`, so it can
+be changed without searching through calculation code.
+
+## SubnetForge web application
+
+The current standalone release includes:
+
+- strict IPv4 subnet analysis with correct `/0`, RFC 3021 `/31`, and `/32` behavior;
+- a largest-first, boundary-aligned VLSM editor with add, edit, delete, duplicate,
+  reorder, clear, and example actions;
+- address-space and allocation-efficiency metrics with precise definitions;
+- a proportional subnet map, responsive result table, copy helpers, and CSV export;
+- overlap detection, subnet-membership checks, and optional educational working;
+- a user-entered device/interface addressing table that checks range, reserved
+  addresses, gateways, and duplicate assignments;
+- no login wall, telemetry, cloud calculation API, fake persistence, or fake billing.
+
+Authentication, project storage, sharing, and Stripe are deliberately labeled as
+future phases. See [the roadmap](docs/ROADMAP.md).
+
+### Web stack and setup
+
+- Next.js 16, React 19, and TypeScript 6
+- Tailwind CSS 4 with a small custom technical design system
+- Vitest, Testing Library, ESLint, Prettier, and pnpm
+- Supabase PostgreSQL/Auth and Vercel planned for later phases
+
+Install Node.js 24 and pnpm 11, then run:
+
+```powershell
+cd web
+pnpm install --frozen-lockfile
+Copy-Item ..\.env.example .env.local
+pnpm dev
+```
+
+Visit `http://localhost:3000`. The subnet calculator, VLSM planner, overlap tool,
+membership checker, explanations, map, addressing validation, and CSV export all
+work without an account or configured service.
+
+### Environment variables
+
+`.env.example` is the safe contract. `NEXT_PUBLIC_APP_URL` is the only currently
+useful value. Supabase and Stripe variables are empty and deferred; do not create
+real credentials until those phases begin. Never commit `.env`, `.env.local`, a
+Supabase service-role key, Stripe secret, password, token, or webhook secret.
+
+### Web development commands
+
+```powershell
+cd web
+pnpm dev             # local development server
+pnpm lint            # ESLint
+pnpm typecheck       # TypeScript without emission
+pnpm test            # unit and rendered workflow tests
+pnpm test:coverage   # networking coverage thresholds
+pnpm format:check    # Prettier verification
+pnpm build           # optimized production build
+```
+
+Detailed design references:
+
+- [Architecture](docs/ARCHITECTURE.md) — preserved CLI and new web boundaries
+- [Networking engine](docs/NETWORKING_ENGINE.md)
+- [Future database and RLS](docs/DATABASE.md)
+- [Security and privacy](docs/SECURITY.md)
+- [Local development and Vercel](docs/DEPLOYMENT.md)
+- [Roadmap](docs/ROADMAP.md)
 
 ## Portfolio relevance
 
@@ -20,6 +90,8 @@ It performs calculations only: it does not scan networks or contact remote syste
 
 ## Features
 
+- Browser-based SubnetForge IPv4/VLSM workspace with local deterministic calculations
+- Overlap analysis, membership checking, visual allocation map, and CSV export
 - Full IPv4 interface analysis including /31 and /32 behavior
 - IPv6 normalization, classification, address range, and /64 guidance
 - CIDR, dotted subnet mask, and wildcard conversions with contiguous-bit validation
@@ -43,8 +115,8 @@ Screenshot placeholders are kept in `screenshots/`. Suggested captures:
 
 ## Installation
 
-Python 3.12 or newer is required. See [PREPARATION.md](PREPARATION.md) for Windows
-installation and verification details.
+Python 3.12 through 3.14 is supported. See [PREPARATION.md](PREPARATION.md) for
+Windows installation and verification details.
 
 ```bash
 python -m venv .venv
@@ -154,11 +226,26 @@ configuration, and endpoint controls are still required. See
 
 ## Architecture
 
-Calculation modules return immutable Pydantic result models and know nothing about
-Rich or terminal formatting. The CLI orchestrates validators, engines,
-visualizations, and exporters. See [architecture.md](docs/architecture.md).
+The Python calculation modules return immutable Pydantic models and know nothing
+about Rich terminal formatting. The web application follows the same separation:
+pure functions in `web/src/lib/networking` know nothing about React. Interactive
+features own browser state and render typed engine results. See the combined
+[cross-product architecture](docs/ARCHITECTURE.md).
 
 ## Testing
+
+Web quality gate:
+
+```bash
+cd web
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:coverage
+pnpm build
+```
+
+Python CLI quality gate:
 
 ```bash
 ruff format --check .
@@ -167,8 +254,25 @@ mypy src/subnet_calculator
 pytest --cov=subnet_calculator --cov-report=term-missing
 ```
 
-The suite covers standard prefixes, special addresses, invalid masks and inputs,
-IPv6, VLSM ordering/alignment/safety, exports, and CLI success/error behavior.
+The suites cover standard prefixes, special addresses, invalid masks and inputs,
+IPv6 CLI behavior, TypeScript IPv4 edge cases, VLSM ordering/alignment/safety,
+overlap, membership, assignments, exports, and rendered anonymous workflows.
+
+## Supabase and deployment status
+
+Supabase is not required or connected yet. Its proposed private-project schema,
+ownership rules, and RLS tests are documented in [DATABASE.md](docs/DATABASE.md).
+When persistence is implemented, Vercel deployment uses `web` as the project root;
+see [DEPLOYMENT.md](docs/DEPLOYMENT.md). Stripe comes only after authenticated
+persistence and cross-user authorization tests pass.
+
+## Security notes
+
+The current web calculation path is local-only: it does not send CIDRs or plans to
+a server. React encodes rendered output, parsers reject malformed inputs, and CSV
+is generated from structured data. Future server features must revalidate all
+client input and rely on both ownership checks and PostgreSQL RLS. Full controls
+are listed in [SECURITY.md](docs/SECURITY.md).
 
 ## Limitations
 
@@ -186,11 +290,13 @@ perform unauthorized network activity.
 
 ## Roadmap
 
-- IPv6 prefix-delegation planner
-- Reserved-block and fixed-address support
-- YAML input as an optional extra
-- HTML reports and accessibility-tested terminal themes
-- Internationalized explanation content
+- Supabase authentication, private project CRUD, and dashboard
+- RLS authorization tests and Vercel production preparation
+- Stripe test-mode billing only after persistence is proven
+- Fixed/reserved blocks, structured PDF reports, and revocable sharing
+- A separately stabilized browser IPv6 suite
+
+The sequenced plan and completed phases are in [ROADMAP.md](docs/ROADMAP.md).
 
 ## Contributing
 

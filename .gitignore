@@ -2,11 +2,13 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest-*/
 .mypy_cache/
 .ruff_cache/
 
 # Virtual environments
 .venv/
+.package-smoke/
 venv/
 env/
 .ven*.broken-*/
@@ -21,6 +23,10 @@ coverage.xml
 build/
 dist/
 *.egg-info/
+web/node_modules/
+web/.next/
+web/coverage/
+web/*.tsbuildinfo
 
 # Editors
 .idea/

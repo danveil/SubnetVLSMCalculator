@@ -7,7 +7,7 @@ name = "SubnetVLSMCalculator"
 version = "0.1.0"
 description = "A professional IPv4, IPv6, subnetting, and VLSM command-line calculator"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.15"
 license = { text = "MIT" }
 authors = [{ name = "SubnetVLSMCalculator contributors" }]
 classifiers = [
@@ -16,6 +16,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: System :: Networking",
 ]
 dependencies = [
@@ -37,6 +38,14 @@ subnetcalc = "subnet_calculator.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/subnet_calculator"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.env.example",
+  "/.github",
+  "/screenshots",
+  "/web",
+]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config"
@@ -69,4 +78,3 @@ files = ["src/subnet_calculator"]
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
-

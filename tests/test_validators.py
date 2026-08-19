@@ -3,8 +3,9 @@
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
-from subnet_calculator.models import SegmentRequest
+from subnet_calculator.models import SegmentRequest, VLSMInput
 from subnet_calculator.validators import (
     CalculatorValidationError,
     validate_output_path,
@@ -48,6 +49,21 @@ def test_duplicate_vlan() -> None:
 def test_empty_segments() -> None:
     with pytest.raises(CalculatorValidationError, match="at least one"):
         validate_segments(())
+
+
+def test_import_models_reject_unknown_fields() -> None:
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        SegmentRequest.model_validate(
+            {"name": "Users", "required_hosts": 20, "unexpected": "value"}
+        )
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        VLSMInput.model_validate(
+            {
+                "parent_network": "192.168.1.0/24",
+                "segments": [{"name": "Users", "required_hosts": 20}],
+                "unexpected": "value",
+            }
+        )
 
 
 def test_safe_output_path() -> None:
