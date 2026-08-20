@@ -11,6 +11,12 @@ semantic versioning.
   addressing validator, overlap detector, membership checker, and CSV export
 - Web accessibility announcements, responsive mobile navigation, and production
   security headers
+- Optional Supabase email/password signup, confirmation, login, logout, and
+  password-recovery flows with SSR session refresh
+- Private saved-project dashboard workflows for create, read, edit, duplicate,
+  and delete without placing a login wall around calculators
+- Supabase local configuration, an initial workspace migration, authenticated
+  atomic save RPC, and pgTAP RLS/privilege tests
 - Python 3.14 CI coverage and wheel/sdist packaging smoke tests
 - A Python sdist boundary that excludes the independently shipped web workspace
 
@@ -28,6 +34,10 @@ semantic versioning.
   execution in both Python and TypeScript exporters
 - Imported Python VLSM documents reject unknown fields instead of silently
   ignoring them
+- Authenticated project input is recalculated on the server, and the database
+  rejects browser-authored allocation payloads and arbitrary project owners
+- Supabase session cookies consistently use SameSite=Lax and become Secure in
+  production while remaining browser-readable for the supported SSR client flow
 
 ## [0.1.0] - 2026-08-13
 

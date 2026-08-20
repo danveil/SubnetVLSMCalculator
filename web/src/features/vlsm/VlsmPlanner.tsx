@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { CopyButton } from "@/components/CopyButton";
 import { MetricCard } from "@/components/MetricCard";
@@ -16,6 +17,7 @@ import {
   type VlsmRequirement,
   vlsmPlanToCsv,
 } from "@/lib/networking";
+import { storeProjectDraft } from "@/features/projects/draft";
 import { downloadTextFile } from "@/utils/download";
 
 import { AllocationMap } from "./AllocationMap";
@@ -39,10 +41,12 @@ function newRequirement(copy?: VlsmRequirement): VlsmRequirement {
 }
 
 export function VlsmPlanner() {
+  const router = useRouter();
   const [parent, setParent] = useState("10.10.0.0/16");
   const [requirements, setRequirements] =
     useState<readonly VlsmRequirement[]>(example);
   const [showWorking, setShowWorking] = useState(false);
+  const [draftHandoffError, setDraftHandoffError] = useState("");
   const [addressingEdits, setAddressingEdits] = useState<AddressingEdits>({});
   const calculation = useMemo<{ plan: VlsmPlan | null; error: string }>(() => {
     try {
@@ -273,6 +277,11 @@ export function VlsmPlanner() {
           {calculation.error}
         </p>
       ) : null}
+      {draftHandoffError ? (
+        <p className="form-error" role="alert">
+          {draftHandoffError}
+        </p>
+      ) : null}
       {calculation.plan ? (
         <>
           <div className="metrics-grid">
@@ -305,19 +314,40 @@ export function VlsmPlanner() {
               <p className="eyebrow">Allocation results</p>
               <h3>Largest-first, boundary-aligned subnets</h3>
             </div>
-            <button
-              className="button button-primary"
-              type="button"
-              onClick={() =>
-                downloadTextFile(
-                  vlsmPlanToCsv(calculation.plan!),
-                  "subnetforge-vlsm-plan.csv",
-                  "text/csv;charset=utf-8",
-                )
-              }
-            >
-              Export CSV
-            </button>
+            <div className="toolbar-actions">
+              <button
+                className="button button-secondary"
+                onClick={() => {
+                  try {
+                    storeProjectDraft(window.localStorage, {
+                      baseNetwork: parent,
+                      requirements,
+                    });
+                    router.push("/dashboard/new");
+                  } catch {
+                    setDraftHandoffError(
+                      "Your browser blocked temporary draft storage. Allow site storage, then try again.",
+                    );
+                  }
+                }}
+                type="button"
+              >
+                Save online
+              </button>
+              <button
+                className="button button-primary"
+                type="button"
+                onClick={() =>
+                  downloadTextFile(
+                    vlsmPlanToCsv(calculation.plan!),
+                    "subnetforge-vlsm-plan.csv",
+                    "text/csv;charset=utf-8",
+                  )
+                }
+              >
+                Export CSV
+              </button>
+            </div>
           </div>
           <div className="table-scroll">
             <table className="data-table results-table">

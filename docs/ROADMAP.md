@@ -9,17 +9,25 @@
 - CSV export and responsive, anonymous-first product experience;
 - isolated brand and centralized free/pro plan definitions.
 
-## Next: authenticated workspace (Phases 10–13)
+## Implemented in repository: authenticated workspace (Phases 10–13)
 
-1. Add Supabase email/password signup, login, logout, and password reset.
-2. Add private projects and requirement persistence with server revalidation.
-3. Add dashboard CRUD: create, view, rename, edit, duplicate, and delete.
-4. Implement RLS and automated User A versus User B authorization tests.
-5. Add limited project history without placing a login wall around calculators.
+- Supabase email/password signup, login, logout, confirmation, and password reset;
+- optional private projects and ordered requirement persistence with server
+  recalculation;
+- dashboard create, view, edit, duplicate, and delete workflows;
+- a transactionally safe authenticated save RPC, explicit grants, RLS policies,
+  and a committed User A versus User B pgTAP suite; and
+- no login wall around the anonymous calculators.
 
-## Deployment and product learning (Phase 14)
+The code and migration are present, but a hosted Supabase project, SMTP delivery,
+remote migration application, and production-like two-user acceptance checks are
+external deployment work. Limited project history has not been implemented.
 
-- deploy previews and production to Vercel;
+## Next: deployment and product learning (Phase 14)
+
+- configure hosted Supabase Auth URLs/SMTP and apply the committed migration;
+- run local database lint/pgTAP plus manual cross-user checks against preview;
+- deploy previews and production to Vercel with the public Supabase variables;
 - add privacy-conscious, content-free event analytics only after a measurement
   plan and privacy review;
 - accessibility audit, dependency review, and performance budgets;

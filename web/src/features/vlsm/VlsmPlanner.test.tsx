@@ -1,9 +1,25 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import {
+  parseProjectDraft,
+  projectDraftStorageKey,
+} from "@/features/projects/draft";
 
 import { VlsmPlanner } from "./VlsmPlanner";
 
+const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: routerPush }),
+}));
+
 describe("VlsmPlanner", () => {
+  beforeEach(() => {
+    routerPush.mockReset();
+    window.localStorage.clear();
+  });
+
   it("renders a complete anonymous example plan", () => {
     render(<VlsmPlanner />);
 
@@ -59,5 +75,22 @@ describe("VlsmPlanner", () => {
       (screen.getByLabelText("Device for 10.10.0.0/23") as HTMLInputElement)
         .value,
     ).toBe("R1");
+  });
+
+  it("stores a validated cross-tab draft before opening the dashboard", () => {
+    render(<VlsmPlanner />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save online" }));
+
+    expect(routerPush).toHaveBeenCalledWith("/dashboard/new");
+    const storedDraft = window.localStorage.getItem(projectDraftStorageKey);
+    expect(storedDraft).not.toBeNull();
+    const parsedDraft = parseProjectDraft(storedDraft!);
+    expect(parsedDraft.baseNetwork).toBe("10.10.0.0/16");
+    expect(parsedDraft.requirements).toHaveLength(6);
+    expect(parsedDraft.requirements[0]).toMatchObject({
+      name: "Students",
+      requiredHosts: 500,
+    });
   });
 });

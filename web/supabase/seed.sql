@@ -1,0 +1,2 @@
+-- Intentionally empty. Authorization test users are transaction-scoped fixtures
+-- in supabase/tests, never persistent local seed accounts.

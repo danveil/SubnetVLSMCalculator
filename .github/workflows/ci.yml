@@ -107,3 +107,49 @@ jobs:
 
       - name: Build production application
         run: pnpm build
+
+  database-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install web dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start and reset local Supabase
+        run: |
+          pnpm db:start
+          pnpm db:reset
+
+      - name: Lint database schema
+        run: pnpm db:lint
+
+      - name: Verify generated database types
+        run: |
+          pnpm db:types
+          git diff --exit-code -- src/lib/supabase/database.types.ts
+
+      - name: Test row-level security and database invariants
+        run: pnpm db:test
+
+      - name: Stop local Supabase
+        if: always()
+        run: pnpm db:stop

@@ -3,6 +3,11 @@
 This assessment was completed before web files were introduced. It records the
 baseline and the decisions that governed the migration.
 
+> Historical status: the Supabase items described below as gated were subsequently
+> implemented in the repository after the anonymous calculator stabilized. For the
+> current runbook, use `README.md`, `DATABASE.md`, `DEPLOYMENT.md`, and `ROADMAP.md`.
+> Stripe remains future work.
+
 ## Existing application
 
 The source product is a Python 3.12 command-line application. It uses a `src`
@@ -24,11 +29,11 @@ formatting and is covered by 108 passing tests with 91% statement coverage.
 - Isolate temporary branding and plan limits in configuration modules.
 - Reject unknown imported fields when cloud/project import is introduced.
 
-## Do not add yet
+## Original gate (historical)
 
-Supabase authentication, persistence, RLS, Stripe, and billing UI remain gated
-until the standalone web calculator is stable. Placeholders must not imply that
-cloud persistence or payments work.
+At assessment time, Supabase authentication, persistence, RLS, Stripe, and billing
+UI were gated until the standalone web calculator was stable. Authentication,
+private persistence, and RLS were added later; Stripe is still gated.
 
 ## Migration shape
 
@@ -65,16 +70,16 @@ precise web utilization definitions. None justified deleting the proven CLI.
 
 ## F–H. Target architecture and dependencies
 
-The target is a sibling `web/` Next.js application, not JavaScript code embedded
+The original target was a sibling `web/` Next.js application, not JavaScript code embedded
 inside Python or an immediate replacement. Its pure TypeScript engine feeds React
-features; later server-only services handle Supabase and Stripe. Required initial
+features; later server-only services were planned for Supabase and Stripe. Required initial
 dependencies are Next.js, React, TypeScript, Tailwind CSS, Vitest, Testing Library,
 ESLint, and Prettier. No IP calculation, chart, form, state-management, database,
 authentication, or billing library is necessary in the standalone phase.
 
-Phases 1–9 cover the audit, engine, tests, tools, exports, visualization, and
-product UI. Phases 10–15 deliberately gate authentication, persistence, RLS,
-dashboard, deployment, and payments.
+Phases 1–9 covered the audit, engine, tests, tools, exports, visualization, and
+product UI. The original plan gated authentication, persistence, RLS, dashboard,
+deployment, and payments after them.
 
 ## I. Development setup checklist
 
@@ -87,18 +92,18 @@ dashboard, deployment, and payments.
 - Python dependencies: existing `.venv` validated with CLI quality checks.
 - Web dependencies: isolated under `web/`.
 
-Later the developer needs a GitHub repository plus free/local-capable Supabase and
-Vercel accounts. A Stripe account is needed only for the test-mode billing phase.
-No paid account is required for the current release.
+The plan anticipated a GitHub repository plus free/local-capable Supabase and
+Vercel accounts. Those services are now part of the optional workspace deployment
+runbook. A Stripe account is needed only for the future test-mode billing phase.
 
 ## J. Migration risks
 
 - Python and TypeScript behavior can drift; known-answer tests reduce that risk.
 - JavaScript signed bitwise coercion can corrupt high addresses; the web engine
   uses safe unsigned arithmetic.
-- Cloud features expand the privacy and authorization surface; they remain gated
-  behind server validation and RLS tests.
+- Cloud features expand the privacy and authorization surface; the implemented
+  saved workspace is guarded by server validation, grants, and RLS tests.
 - A large visual map can become unreadable; tables remain the accessible source
   presentation and the map is derived-only.
 - Premature billing or login walls can damage usability; calculators remain fully
-  anonymous and pricing is explicitly marked future.
+  anonymous and Stripe pricing remains future.

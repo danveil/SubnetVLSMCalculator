@@ -27,17 +27,21 @@ The current standalone release includes:
 - overlap detection, subnet-membership checks, and optional educational working;
 - a user-entered device/interface addressing table that checks range, reserved
   addresses, gateways, and duplicate assignments;
-- no login wall, telemetry, cloud calculation API, fake persistence, or fake billing.
+- optional email/password accounts and a private saved-project dashboard;
+- no login wall around calculators, telemetry, cloud calculation API, or fake billing.
 
-Authentication, project storage, sharing, and Stripe are deliberately labeled as
-future phases. See [the roadmap](docs/ROADMAP.md).
+Authentication and private project storage are implemented in the repository.
+They require an explicitly configured Supabase project; the calculators remain
+anonymous and local when no account is used. Sharing and Stripe remain future
+phases. See [the roadmap](docs/ROADMAP.md).
 
 ### Web stack and setup
 
 - Next.js 16, React 19, and TypeScript 6
 - Tailwind CSS 4 with a small custom technical design system
 - Vitest, Testing Library, ESLint, Prettier, and pnpm
-- Supabase PostgreSQL/Auth and Vercel planned for later phases
+- Supabase Auth/PostgreSQL for optional accounts and saved projects
+- Vercel deployment target; Stripe is not integrated
 
 Install Node.js 24 and pnpm 11, then run:
 
@@ -50,14 +54,26 @@ pnpm dev
 
 Visit `http://localhost:3000`. The subnet calculator, VLSM planner, overlap tool,
 membership checker, explanations, map, addressing validation, and CSV export all
-work without an account or configured service.
+work without an account or configured service. Sign-up, sign-in, password reset,
+and `/dashboard` require the Supabase variables below.
 
 ### Environment variables
 
-`.env.example` is the safe contract. `NEXT_PUBLIC_APP_URL` is the only currently
-useful value. Supabase and Stripe variables are empty and deferred; do not create
-real credentials until those phases begin. Never commit `.env`, `.env.local`, a
-Supabase service-role key, Stripe secret, password, token, or webhook secret.
+`.env.example` is the safe contract. The optional authenticated workspace uses
+exactly these public values:
+
+```dotenv
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-local-or-hosted-publishable-key
+```
+
+The Supabase project URL and publishable key are intentionally browser-visible;
+RLS and database grants protect data, not secrecy of that key. The application
+does not require `SUPABASE_SERVICE_ROLE_KEY`, and that key must never be placed in
+a `NEXT_PUBLIC_` variable or browser bundle. Stripe variables remain unused.
+Never commit `.env`, `.env.local`, passwords, access tokens, service-role keys,
+Stripe secrets, or webhook secrets.
 
 ### Web development commands
 
@@ -76,7 +92,7 @@ Detailed design references:
 
 - [Architecture](docs/ARCHITECTURE.md) — preserved CLI and new web boundaries
 - [Networking engine](docs/NETWORKING_ENGINE.md)
-- [Future database and RLS](docs/DATABASE.md)
+- [Supabase database, RLS, and local workflow](docs/DATABASE.md)
 - [Security and privacy](docs/SECURITY.md)
 - [Local development and Vercel](docs/DEPLOYMENT.md)
 - [Roadmap](docs/ROADMAP.md)
@@ -86,7 +102,8 @@ Detailed design references:
 This project demonstrates practical network engineering, security-zone design,
 Python `src`-layout architecture, immutable validated models, defensive file I/O,
 cross-platform packaging, CLI usability, static analysis, CI, and technical writing.
-It performs calculations only: it does not scan networks or contact remote systems.
+The CLI and anonymous calculators do not scan networks or contact remote systems;
+only opted-in account and saved-project workflows contact Supabase.
 
 ## Features
 
@@ -102,7 +119,8 @@ It performs calculations only: it does not scan networks or contact remote syste
 - Beginner-friendly explanation mode
 - JSON, CSV, and text reports with timestamps, inputs, warnings, and version metadata
 - Review-required Cisco Packet Tracer VLAN and SVI configuration templates
-- No telemetry, external requests, scanning, exploitation, or credential functionality
+- No telemetry, scanning, exploitation, or device-credential functionality;
+  external requests are limited to opted-in Supabase auth and project persistence
 
 ## Screenshots
 
@@ -245,6 +263,18 @@ pnpm test:coverage
 pnpm build
 ```
 
+Supabase database gate (Docker required):
+
+```bash
+cd web
+pnpm db:start
+pnpm db:reset
+pnpm db:lint
+pnpm db:types
+pnpm db:test
+pnpm db:stop
+```
+
 Python CLI quality gate:
 
 ```bash
@@ -256,23 +286,40 @@ pytest --cov=subnet_calculator --cov-report=term-missing
 
 The suites cover standard prefixes, special addresses, invalid masks and inputs,
 IPv6 CLI behavior, TypeScript IPv4 edge cases, VLSM ordering/alignment/safety,
-overlap, membership, assignments, exports, and rendered anonymous workflows.
+overlap, membership, assignments, exports, auth validation, project drafts,
+rendered workflows, database grants, RPC validation, and cross-user RLS denial.
+The current pgTAP database run passes 62/62 assertions. CI also regenerates
+`web/src/lib/supabase/database.types.ts` and fails if the committed types drift
+from the migration.
 
 ## Supabase and deployment status
 
-Supabase is not required or connected yet. Its proposed private-project schema,
-ownership rules, and RLS tests are documented in [DATABASE.md](docs/DATABASE.md).
-When persistence is implemented, Vercel deployment uses `web` as the project root;
-see [DEPLOYMENT.md](docs/DEPLOYMENT.md). Stripe comes only after authenticated
-persistence and cross-user authorization tests pass.
+The repository includes Supabase SSR clients, email/password auth flows, a private
+project dashboard, a committed SQL migration, an authenticated workspace-save RPC,
+and User A versus User B pgTAP authorization tests. This does **not** configure a
+hosted Supabase project automatically. For local database commands, remote migration
+steps, Auth redirect settings, and Vercel variables, follow
+[DATABASE.md](docs/DATABASE.md) and [DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+Anonymous calculations still run only in the browser. Data reaches Supabase only
+when a user opts into an account and saves a project. Stripe is not integrated and
+must remain a future phase until hosted persistence and authorization have been
+validated in production-like environments.
+
+The calculator's **Save online** handoff first validates the parent/requirements,
+then places a versioned draft in browser `localStorage`. That draft expires after
+30 minutes and is consumed (removed) when `/dashboard/new` restores it. It is a
+temporary same-browser handoff, not cloud persistence; data is sent to Supabase
+only after the authenticated user submits the project form.
 
 ## Security notes
 
-The current web calculation path is local-only: it does not send CIDRs or plans to
-a server. React encodes rendered output, parsers reject malformed inputs, and CSV
-is generated from structured data. Future server features must revalidate all
-client input and rely on both ownership checks and PostgreSQL RLS. Full controls
-are listed in [SECURITY.md](docs/SECURITY.md).
+The anonymous calculation path is local-only: it does not send CIDRs or plans to a
+server. React encodes rendered output, parsers reject malformed inputs, and CSV is
+generated from structured data. Authenticated saves cross a server boundary, are
+validated again, and use both verified identity and PostgreSQL RLS. Full controls
+and the intentionally browser-readable Supabase SSR cookie model are documented in
+[SECURITY.md](docs/SECURITY.md).
 
 ## Limitations
 
@@ -290,8 +337,8 @@ perform unauthorized network activity.
 
 ## Roadmap
 
-- Supabase authentication, private project CRUD, and dashboard
-- RLS authorization tests and Vercel production preparation
+- hosted Supabase/Vercel configuration and production-like authorization checks
+- accessibility, dependency, and email-delivery review for the account workspace
 - Stripe test-mode billing only after persistence is proven
 - Fixed/reserved blocks, structured PDF reports, and revocable sharing
 - A separately stabilized browser IPv6 suite

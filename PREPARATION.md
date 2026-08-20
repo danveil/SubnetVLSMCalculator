@@ -44,14 +44,17 @@ and subnet calculations.
 ## Required web packages
 
 The web workspace installs its exact Next.js, React, TypeScript, Vitest, ESLint,
-Prettier, and Tailwind versions from `web/pnpm-lock.yaml`. Do not install these
-packages globally or substitute npm/yarn for the locked pnpm workflow.
+Prettier, Tailwind, Supabase SSR/client, and Supabase CLI versions from
+`web/pnpm-lock.yaml`. Do not install these packages globally or substitute npm/yarn
+for the locked pnpm workflow.
 
 ## Optional software
 
 - Visual Studio Code or another Python-aware editor
 - Windows Terminal for improved Unicode and color rendering
 - `pipx` for installing the CLI in an isolated user environment
+- Docker Desktop (required only for the full local Supabase database workflow)
+- a hosted Supabase account (required only for deployed authentication/persistence)
 
 ## Windows installation commands
 
@@ -115,8 +118,33 @@ Copy-Item ..\.env.example .env.local
 pnpm dev
 ```
 
-The copied environment file disables Next.js telemetry and supplies only safe
-local defaults. The application is available at `http://localhost:3000`.
+The copied environment file disables Next.js telemetry and supplies safe local
+defaults. The anonymous calculator is available at `http://localhost:3000` without
+Supabase. Account and saved-project routes require these exact public variables:
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-local-publishable-key
+```
+
+The URL and publishable key are intended for browser use. Never replace the
+publishable key with a service-role key; service-role access bypasses RLS and is not
+required by the current application.
+
+For the full local workspace, start Docker Desktop and run from `web`:
+
+```powershell
+pnpm db:start
+pnpm db:reset
+pnpm db:lint
+pnpm db:types
+pnpm db:test
+pnpm dev
+```
+
+Use the API URL/key printed by `db:start`. Local confirmation and reset emails are
+visible at `http://127.0.0.1:54324`. Run `pnpm db:stop` when finished. These local
+database commands do not configure or migrate a hosted Supabase project.
 
 If PowerShell blocks local activation scripts for the current process only:
 
@@ -153,6 +181,15 @@ pnpm lint
 pnpm typecheck
 pnpm test:coverage
 pnpm build
+```
+
+When a database migration or authorization policy changes, also run with Docker:
+
+```powershell
+pnpm db:reset
+pnpm db:lint
+pnpm db:types
+pnpm db:test
 ```
 
 Leave the environment with:

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { brand } from "@/config/brand";
 import { SubnetCalculator } from "@/features/calculator/SubnetCalculator";
 import { NetworkTools } from "@/features/tools/NetworkTools";
@@ -25,6 +27,8 @@ export default function HomePage() {
           <a href="#vlsm">VLSM</a>
           <a href="#validation-tools">Validate</a>
           <a href="#features">Features</a>
+          <Link href="/dashboard">Projects</Link>
+          <Link href="/login">Sign in</Link>
           <span className="status-pill">Local-first</span>
         </nav>
       </header>
@@ -198,9 +202,8 @@ export default function HomePage() {
           <p className="eyebrow">Product direction</p>
           <h2 id="pricing-title">Useful before you ever create an account.</h2>
           <p>
-            Core calculation remains free and local. Cloud projects will arrive
-            only after authentication and row-level authorization are
-            implemented and tested.
+            Core calculation remains free and local. Accounts add a private
+            cloud workspace without placing a login wall around the tools.
           </p>
         </div>
         <div className="pricing-cards">
@@ -218,15 +221,17 @@ export default function HomePage() {
             </a>
           </article>
           <article className="future-plan">
-            <span>Pro — future</span>
-            <strong>Cloud planning workspace</strong>
+            <span>Account workspace</span>
+            <strong>Private saved projects</strong>
             <ul>
-              <li>Expanded project history</li>
-              <li>Sharing and advanced reports</li>
-              <li>Advanced addressing tables</li>
-              <li>IPv6 planning suite</li>
+              <li>Three saved projects on the free plan</li>
+              <li>Private requirements and address plans</li>
+              <li>Server-revalidated calculations</li>
+              <li>Row-level ownership controls</li>
             </ul>
-            <p>Not yet available. No payment integration is active.</p>
+            <Link className="button button-secondary" href="/dashboard">
+              Open saved projects
+            </Link>
           </article>
         </div>
       </section>
@@ -261,9 +266,8 @@ export default function HomePage() {
           <details>
             <summary>Can I save projects online?</summary>
             <p>
-              Not yet. Cloud persistence will not be presented as working until
-              authentication, ownership checks, and PostgreSQL row-level
-              security are complete.
+              Yes. Create an account to save private projects. The calculator
+              remains available without signing in.
             </p>
           </details>
         </div>

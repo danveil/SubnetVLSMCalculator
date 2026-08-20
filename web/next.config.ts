@@ -1,6 +1,19 @@
 import type { NextConfig } from "next";
 
+import { normalizeSupabaseProjectUrl } from "./src/lib/supabase/config";
+
 const isDevelopment = process.env.NODE_ENV === "development";
+const configuredSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+const supabaseConnectSources: string[] = [];
+
+if (configuredSupabaseUrl) {
+  const supabaseOrigin = normalizeSupabaseProjectUrl(configuredSupabaseUrl);
+  supabaseConnectSources.push(
+    supabaseOrigin,
+    supabaseOrigin.replace(/^http/, "ws"),
+  );
+}
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -11,7 +24,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data:",
   "font-src 'self' data:",
-  `connect-src 'self'${isDevelopment ? " ws: wss:" : ""}`,
+  `connect-src 'self' ${supabaseConnectSources.join(" ")}${isDevelopment ? " ws: wss:" : ""}`,
   "manifest-src 'self'",
   "worker-src 'self' blob:",
   ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),

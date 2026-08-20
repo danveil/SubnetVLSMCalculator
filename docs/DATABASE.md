@@ -1,84 +1,174 @@
-# Future database design
+# Supabase database and saved workspace
 
-Database-backed projects are a deferred phase. No UI currently claims that data
-is saved, and no Supabase dependency or credential is required for local use.
+The repository includes a Supabase migration, local configuration, an empty seed,
+and pgTAP authorization tests under `web/supabase/`. The anonymous calculators do
+not require this database. Supabase is used only for users who choose to create an
+account and save private projects.
 
-## Proposed tables
+Repository support is not the same as a configured hosted service. A developer
+must still create or link a Supabase project, apply the migration, configure Auth
+URLs/email delivery, and set deployment environment variables.
+
+## Implemented schema
+
+The migration `web/supabase/migrations/20260819130221_initial_workspace.sql`
+creates:
 
 ```text
 profiles
-  id uuid primary key references auth.users(id)
+  id uuid primary key references auth.users(id) on delete cascade
   display_name text
-  created_at timestamptz not null
-
-billing_accounts (server-owned schema)
-  user_id uuid primary key references auth.users(id)
-  plan text check (plan in ('free', 'pro'))
-  subscription_status text
-  stripe_customer_id text unique
-  stripe_subscription_id text unique
-  current_period_end timestamptz
+  created_at timestamptz
+  updated_at timestamptz
 
 projects
   id uuid primary key
-  owner_id uuid not null references auth.users(id)
+  owner_id uuid not null references auth.users(id) on delete cascade
   name text not null
   description text
-  base_network text not null
-  created_at timestamptz not null
-  updated_at timestamptz not null
+  base_network text not null (canonical IPv4 CIDR only)
+  created_at timestamptz
+  updated_at timestamptz
 
 requirements
   id uuid primary key
   project_id uuid not null references projects(id) on delete cascade
   position integer not null
   name text not null
-  required_hosts integer not null
-  point_to_point boolean not null default false
+  required_hosts bigint not null
+  point_to_point boolean not null
+  created_at timestamptz
+  updated_at timestamptz
 
 allocations
   id uuid primary key
   requirement_id uuid not null unique references requirements(id) on delete cascade
   calculated_payload jsonb not null
+  created_at timestamptz
+  updated_at timestamptz
 ```
 
-Allocations may be stored for reproducible reports, but trusted server code must
-recalculate and validate them from requirements before every save. Client results
-are never authoritative. An allocation derives its project through its requirement;
-not storing a second `project_id` prevents a requirement and allocation from being
-linked to different projects. If a denormalized project ID is added later, enforce
-it with a composite foreign key rather than application checks alone.
+An Auth trigger creates a matching profile. Database constraints limit names,
+descriptions, IPv4 host counts, requirement ordering, and allocation payload size.
+The database serializes and enforces the current free limit of three projects per
+user and at most 100 requirements per project.
 
-## Row Level Security
+`allocations` is reserved for trusted, reproducible results. Authenticated browser
+roles may read their own rows but have no insert, update, or delete grant. The
+current dashboard stores only the project and requirement inputs, then recalculates
+the VLSM plan with the TypeScript engine whenever data crosses the server data
+layer.
 
-Enable RLS on every user-owned table. Project policies should compare
-`owner_id = auth.uid()` for select, insert, update, and delete. Child-table policies
-must require an owning project whose `owner_id = auth.uid()`. The insert path must
-derive `owner_id` from the authenticated session; it must never trust an arbitrary
-owner supplied by a browser.
+## Authenticated write RPC
 
-Tests must create User A and User B, then prove that all direct and nested reads,
-updates, and deletes from A against B's project fail. Service-role credentials are
-server-only and must not be used in ordinary user request paths because they bypass
-RLS.
+The dashboard calls this committed database function:
 
-Billing entitlements and Stripe identifiers are server-owned. Browser roles may
-read only the minimum entitlement needed for their own account and must have no
-insert, update, or delete policy on `billing_accounts`. Subscription changes come
-only from trusted server code after authenticated checkout or verified Stripe
-webhook signatures; users must never be able to promote their own plan by updating
-a profile row.
+```sql
+public.save_project_workspace(
+  p_project_id uuid,
+  p_name text,
+  p_description text,
+  p_base_network text,
+  p_requirements jsonb
+) returns uuid
+```
 
-## Sharing later
+Passing `NULL` as `p_project_id` creates a project; passing an owned ID replaces
+that workspace's fields and ordered requirements in one transaction. The function:
 
-A separate share record should contain a cryptographically random token hash,
-project ID, creation/revocation timestamps, and explicit read-only scope. Public
-responses must expose only the selected project, never owner email or sibling
-projects.
+- requires an authenticated `auth.uid()`;
+- rejects unknown requirement fields, fractional/out-of-range host counts, invalid
+  ordering, IPv6 parents, and more than 100 requirements;
+- derives ownership from the session rather than accepting `owner_id`;
+- does not accept or store client-authored allocation payloads; and
+- is executable by `authenticated`, not `anon`.
 
-## Setup checkpoint
+The application validates and recalculates before calling the RPC. The RPC,
+constraints, grants, and RLS remain independent defensive boundaries.
 
-Create the Supabase project, migration SQL, generated TypeScript database types,
-local seed users, and RLS integration tests together in Phase 10–13. Do not paste
-production keys into source files. The browser may receive only the public URL and
-publishable/anonymous key; service-role and webhook secrets stay server-side.
+## Row Level Security and grants
+
+RLS is enabled on `profiles`, `projects`, `requirements`, and `allocations`.
+Separate select/insert/update/delete policies constrain each row to the current
+user; child policies join through the owning project. Explicit grants additionally
+prevent a browser role from choosing or transferring `projects.owner_id` and from
+writing allocation payloads. The service-role credential bypasses RLS and is not
+used by normal application requests.
+
+`web/supabase/tests/workspace_rls.test.sql` supplies transaction-scoped User A and
+User B fixtures. Its pgTAP assertions cover table/RLS existence, privileges, RPC
+validation, free limits, own-row CRUD, cross-user denial, and anonymous denial.
+No persistent test users are placed in `seed.sql`.
+
+## Local database workflow
+
+Docker Desktop (or a compatible Docker engine) must be running. From `web`:
+
+```powershell
+pnpm db:start
+pnpm db:reset
+pnpm db:lint
+pnpm db:types
+pnpm db:test
+pnpm db:stop
+```
+
+`db:start` prints the local API URL and publishable key. Put those public values in
+`web/.env.local` as `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Local email messages are captured by the
+Supabase mail UI at `http://127.0.0.1:54324`; they are not delivered externally.
+
+`db:reset` is destructive only to the local Supabase database. Never point a reset
+command at a hosted or production database.
+
+## Linking and applying a hosted project
+
+Test the migration locally before linking a remote project:
+
+```powershell
+Set-Location web
+pnpm exec supabase login
+pnpm exec supabase link --project-ref YOUR_PROJECT_REF
+pnpm exec supabase db push --dry-run
+pnpm exec supabase db push
+```
+
+Review the dry run before applying it. Use forward-only, reviewed migrations for
+remote changes; do not edit an already-applied migration or use a production reset
+as a rollback mechanism. After applying, perform a manual two-account check in
+addition to the local pgTAP suite.
+
+## External Supabase dashboard checklist
+
+These steps cannot be completed by repository code:
+
+1. Create the hosted project and choose its production region.
+2. Copy the **Project URL** and **publishable key** from the project's API settings.
+3. Under **Authentication → URL Configuration**, set the production Site URL and
+   allow `http://localhost:3000/auth/confirm*` plus
+   `https://YOUR_DOMAIN/auth/confirm*`. This wildcard is path-scoped and permits
+   the validated `next` query carried by the callback. Add preview patterns only
+   when they are intentionally supported.
+4. Keep email confirmation enabled. Configure a production SMTP provider before a
+   public launch; the default hosted email service is not a production mail plan.
+5. Apply the committed migration through the CLI and inspect RLS/policies in the
+   dashboard before enabling real users.
+6. Add only the public URL and publishable key to the web deployment, then run the
+   signup, confirmation, recovery, save, read, duplicate, and delete checks with
+   two different users.
+
+The auth callback supports Supabase SSR PKCE `code` exchanges and configured custom
+`token_hash`/`type` email templates. Any custom template must still point to the
+configured `/auth/confirm` route and remain covered by the redirect allow-list.
+
+## Secrets and future billing
+
+The publishable key is safe to expose only because grants and RLS enforce access.
+Never put a service-role key in `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, source code,
+logs, screenshots, or client-side environment. `SUPABASE_SERVICE_ROLE_KEY` is not
+required by the current application and should remain unset until a narrowly scoped
+server-only administrative job genuinely needs it.
+
+There is no billing table or Stripe integration in this migration. Billing
+entitlements, signed idempotent webhooks, and server-owned Stripe identifiers
+remain future work after hosted persistence and cross-user authorization are proven.
