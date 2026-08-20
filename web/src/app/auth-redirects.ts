@@ -62,6 +62,16 @@ export function sanitizeNextPath(
   }
 }
 
+export function sanitizeLoginDestination(value: unknown): string {
+  const nextPath = sanitizeNextPath(value);
+  const pathname = new URL(nextPath, INTERNAL_ORIGIN).pathname.replace(
+    /\/+$/u,
+    "",
+  );
+
+  return pathname === "/login" ? "/dashboard" : nextPath;
+}
+
 export function authCallbackUrl(nextPath: string) {
   const url = new URL("/auth/confirm", getAppOrigin());
   url.searchParams.set("next", sanitizeNextPath(nextPath));

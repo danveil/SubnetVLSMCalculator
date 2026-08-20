@@ -81,6 +81,21 @@ nav {
 nav a:hover {
   color: var(--teal);
 }
+.navigation-account-button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  padding: 0;
+}
+.navigation-account-button:hover {
+  color: var(--teal);
+}
+.navigation-account-loading {
+  color: var(--muted);
+  min-width: 104px;
+}
 .status-pill {
   border: 1px solid var(--line);
   border-radius: 999px;

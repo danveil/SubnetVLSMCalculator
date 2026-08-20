@@ -47,6 +47,9 @@ child rows to User B's project. Test anonymous denial and RPC privileges as well
 ordinary own-row success. Browser-submitted allocation output is never authoritative:
 recalculate networking results in trusted server code.
 
+Commit the regenerated `web/src/lib/supabase/database.types.ts` with each schema
+change. CI regenerates it and rejects drift before running the pgTAP suite.
+
 Use Python 3.12–3.14, Node.js 24, and pnpm 11.19.0 so local behavior matches CI.
 Pure networking rules belong in `src/subnet_calculator` or
 `web/src/lib/networking`; presentation code must not duplicate address arithmetic.

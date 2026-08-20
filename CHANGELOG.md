@@ -17,6 +17,8 @@ semantic versioning.
   and delete without placing a login wall around calculators
 - Supabase local configuration, an initial workspace migration, authenticated
   atomic save RPC, and pgTAP RLS/privilege tests
+- Generated Supabase database types with a CI drift check and a validated,
+  30-minute, consume-on-restore calculator-to-dashboard draft handoff
 - Python 3.14 CI coverage and wheel/sdist packaging smoke tests
 - A Python sdist boundary that excludes the independently shipped web workspace
 

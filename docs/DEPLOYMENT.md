@@ -76,6 +76,9 @@ seed. Do not use a reset command against a linked hosted project.
     project is rejected.
 13. Repeat project access with a second user and confirm neither account can read,
     change, or delete the other's rows or guessable project URLs.
+14. From the anonymous VLSM planner choose **Save online**; confirm the validated
+    local draft restores once in `/dashboard/new`, is removed after restoration,
+    and an expired or malformed draft falls back to defaults.
 
 The Python CLI remains independently installable from the repository root with
 `python -m pip install -e ".[dev]"`.

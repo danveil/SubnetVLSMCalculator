@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { getVerifiedUser } from "@/lib/supabase/auth";
 
 import { LoginForm } from "../auth-forms";
-import { sanitizeNextPath } from "../auth-redirects";
+import { sanitizeLoginDestination } from "../auth-redirects";
 import { AuthShell } from "../auth-shell";
 
 export const metadata: Metadata = {
@@ -27,7 +30,13 @@ export default async function LoginPage({
   const query = await searchParams;
   const message = firstValue(query.message);
   const error = firstValue(query.error);
-  const nextPath = sanitizeNextPath(firstValue(query.next));
+  const nextPath = sanitizeLoginDestination(firstValue(query.next));
+  const user = await getVerifiedUser();
+
+  if (user) {
+    redirect(nextPath);
+  }
+
   const notice =
     message === "password-updated"
       ? {

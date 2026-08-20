@@ -121,6 +121,12 @@ Supabase mail UI at `http://127.0.0.1:54324`; they are not delivered externally.
 `db:reset` is destructive only to the local Supabase database. Never point a reset
 command at a hosted or production database.
 
+`db:types` regenerates `web/src/lib/supabase/database.types.ts`; the adjacent
+`database.ts` preserves the generated file while narrowing the two RPC arguments
+that intentionally accept `null`. CI starts and resets Supabase, lints the schema,
+regenerates the types and rejects drift, then runs the database suite. The final
+local pgTAP verification passes 62/62 assertions.
+
 ## Linking and applying a hosted project
 
 Test the migration locally before linking a remote project:

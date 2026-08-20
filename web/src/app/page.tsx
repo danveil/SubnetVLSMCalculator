@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PublicNavigationSession } from "@/components/PublicNavigationSession";
 import { brand } from "@/config/brand";
 import { SubnetCalculator } from "@/features/calculator/SubnetCalculator";
 import { NetworkTools } from "@/features/tools/NetworkTools";
@@ -22,15 +23,7 @@ export default function HomePage() {
             <small>Address planning workspace</small>
           </span>
         </a>
-        <nav aria-label="Primary navigation">
-          <a href="#workspace">Calculator</a>
-          <a href="#vlsm">VLSM</a>
-          <a href="#validation-tools">Validate</a>
-          <a href="#features">Features</a>
-          <Link href="/dashboard">Projects</Link>
-          <Link href="/login">Sign in</Link>
-          <span className="status-pill">Local-first</span>
-        </nav>
+        <PublicNavigationSession />
       </header>
 
       <section className="hero" id="top">

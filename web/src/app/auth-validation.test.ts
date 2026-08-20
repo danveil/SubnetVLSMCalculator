@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { sanitizeNextPath } from "./auth-redirects";
+import { sanitizeLoginDestination, sanitizeNextPath } from "./auth-redirects";
 import {
   parseEmailForm,
   parseLoginForm,
@@ -82,5 +82,15 @@ describe("safe post-auth redirects", () => {
     "dashboard",
   ])("rejects an unsafe redirect target: %s", (target) => {
     expect(sanitizeNextPath(target)).toBe("/dashboard");
+  });
+
+  it("prevents a signed-in login page from redirecting to itself", () => {
+    expect(sanitizeLoginDestination("/login?next=/login")).toBe("/dashboard");
+  });
+
+  it("preserves a safe post-login destination", () => {
+    expect(sanitizeLoginDestination("/dashboard/new?from=calculator")).toBe(
+      "/dashboard/new?from=calculator",
+    );
   });
 });
