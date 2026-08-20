@@ -1,36 +1,9 @@
+import { resolveAppOrigin } from "@/config/app-origin";
+
 const INTERNAL_ORIGIN = "https://subnetforge.invalid";
 
-function httpOrigin(value: string | undefined, addHttps = false) {
-  const rawValue = value?.trim();
-  if (!rawValue) {
-    return undefined;
-  }
-
-  try {
-    const url = new URL(
-      addHttps && !rawValue.includes("://") ? `https://${rawValue}` : rawValue,
-    );
-
-    const isLocalHttp =
-      url.protocol === "http:" &&
-      ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-
-    if (url.protocol !== "https:" && !isLocalHttp) {
-      return undefined;
-    }
-
-    return url.origin;
-  } catch {
-    return undefined;
-  }
-}
-
 export function getAppOrigin() {
-  return (
-    httpOrigin(process.env.NEXT_PUBLIC_APP_URL) ??
-    httpOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL, true) ??
-    "http://localhost:3000"
-  );
+  return resolveAppOrigin();
 }
 
 export function sanitizeNextPath(

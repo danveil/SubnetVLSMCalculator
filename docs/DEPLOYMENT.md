@@ -88,7 +88,11 @@ The Python CLI remains independently installable from the repository root with
 1. Push the repository to GitHub.
 2. Import it into Vercel and set **Root Directory** to `web`.
 3. Keep the detected framework as Next.js and package manager as pnpm.
-4. Set `NEXT_PUBLIC_APP_URL` to the complete HTTPS deployment origin.
+4. Set `NEXT_PUBLIC_APP_URL` to the complete HTTPS deployment origin, for
+   example `https://your-project.vercel.app`. In Vercel's value field, enter
+   only the URL: do not include the variable name, quotes, a path, query, or
+   fragment. If this optional override is absent or invalid, the application
+   falls back to Vercel's production hostname.
 5. Set `NEXT_PUBLIC_SUPABASE_URL` to the hosted Supabase project URL and
    `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to its publishable key. Scope preview
    and production values deliberately.
